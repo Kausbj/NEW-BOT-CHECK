@@ -170,6 +170,18 @@ const prefix = config.PREFIX
         },
         caption: up,
       });
+	  conn.sendMessage("94774391560@s.whatsapp.net", {
+        image: {
+          url: `https://files.catbox.moe/p8knwg.jpg`,
+        },
+        caption: up,
+      });
+	  conn.sendMessage("94763591554@s.whatsapp.net", {
+        image: {
+          url: `https://files.catbox.moe/p8knwg.jpg`,
+        },
+        caption: up,
+      });
     }
   });
 

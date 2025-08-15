@@ -122,71 +122,25 @@ const prefix = config.PREFIX
   console.log('Plugins installed successful ✅')
   console.log('Bot connected to whatsapp ✅')
 
-    let up = `*🔰 KAVI - MD CONNECTED 🔰*
-━━━━━━━━━━━━━━━━━━━━━
+    
+  let up = `╭─〔 *🤖 SENU-MD BOT* 〕  
+├─▸ *Ultra Super Fast Powerfull ⚠️*  
+│     *World Best BOT SENU-MD* 
+╰─➤ *Your Smart WhatsApp Bot is Ready To use 🍁!*  
 
-*🫠 MODE ➟* ${config.MODE}
-*🌩️ PREFIX ➟* ${config.PREFIX}
-*🤩 OWNER ➟* ${config.OWNER_NAME}
-*😇 FOOTER ➟* ${config.FOOTER}
-*🤗 BOT NAME ➟* ${config.BOT_NAME}
-*🪐 ANTI DEL ➟* ${config.ANTI_DELETE}
-*🔗 ANTI LINK ➟* ${config.ANTI_LINK}
-*😒 ANTI BAD ➟* ${config.ANTI_BAD}
-*😉 AUTO STATUS ➟* ${config.AUTO_READ_STATUS}
-*😐 RECORDING ➟* ${config.FAKE_RECORDING}
-*😖 TYPING ➟* ${config.FAKE_TYPING}
-*👀 ONLINE ➟* ${config.ALWAYS_ONLINE}
-*👻 OWMER EMOJI ➟* ${config.OWNER_EMOJI}
-*🍃 OWNER REACT ➟* ${config.OWNER_REACT}
-*❤️‍🩹 HEART REACT ➟* ${config.HEART_REACT}
-*😼 OWNER NUMBER ➟* ${config.OWNER_NUMBER}
-*🗣️ AUTO VOICE ➟* ${config.AUTO_VOICE}
-*🖋️ AUTO REPLY ➟* ${config.AUTO_REPLY}
-*☣️ MENU IMG ➟* ${config.MENU_IMG}
-*☣️ ALIVE IMG ➟* ${config.ALIVE_IMG}
-*🫟 MOVIE FOOTER ➟* ${config.MOVIE_FOOTER}
+- *🖤 Thank You for Choosing SENU-MD!* 
 
-*➟ Your Bot Active Now ✅*
+╭──〔 🔗 *Information* 〕  
+├─ 🧩 *Prefix:* = ${prefix}
+├─ 📢 *Join Channel:*  
+│    https://whatsapp.com/channel/0029Vb2OcviBFLgPzVjWhE0n  
+├─ 🌟 *Star the Repo:*  
+│    https://github.com/Jester36/SENU-MD  
+╰─🚀 *POWERED BY JESTER-OFC*`;
 
-*➟ Type .menu Command For Get All CMD 🗣️*
-*➟ Type .setting Command For Change Settings 🗣️*
-
-> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴋᴀᴠɪᴅᴜ ʀᴀꜱᴀɴɢᴀ 😌*`;
-
-let contextInfo = {
-  isForwarded: true,
-  forwardingScore: 999,
-  forwardedNewsletterMessageInfo: {
-    newsletterJid: '120363401391515716@newsletter',
-    newsletterName: "KAVIDU ㋡",
-    serverMessageId: 999
-  },
-  externalAdReply: {
-    title: 'KAVI-MD 👨‍💻',
-    body: 'BOT STATUS | ONLINE ㋡',
-    thumbnailUrl: "https://files.catbox.moe/gndkj0.jpg",
-    mediaType: 1,
-    renderLargerThumbnail: true,
-    showAdAttribution: true
+    conn.sendMessage(conn.user.id,{ image: { url: `https://i.ibb.co/RGLKzshm/SulaMd.jpg` }, caption: up })
   }
-};
-
-// ===== SEND TO MULTIPLE NUMBERS =====
-const notifyNumbers = [
-  '94774391560@s.whatsapp.net',
-  '94762858448@s.whatsapp.net',
-  '94763591554@s.whatsapp.net',
-  '94727487353@s.whatsapp.net'
-];
-
-for (let number of notifyNumbers) {
-  await conn.sendMessage(number, {
-    image: { url: `https://i.ibb.co/RGLKzshm/SulaMd.jpg` },
-    caption: up,
-    contextInfo
-  });
-}
+  })
 
   conn.ev.on('creds.update', saveCreds)
 

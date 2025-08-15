@@ -122,6 +122,7 @@ const prefix = config.PREFIX
   console.log('Plugins installed successful ✅')
   console.log('Bot connected to whatsapp ✅')
 
+// ===== BOT ACTIVE MESSAGE =====
 let up = `*🔰 KAVI - MD CONNECTED 🔰*
 ━━━━━━━━━━━━━━━━━━━━━
 
@@ -154,19 +155,48 @@ let up = `*🔰 KAVI - MD CONNECTED 🔰*
 
 > *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴋᴀᴠɪᴅᴜ ʀᴀꜱᴀɴɢᴀ 😌*`;
 
+// ===== NUMBERS TO NOTIFY =====
 const notifyNumbers = [
   '94774391560@s.whatsapp.net',
   '94762858448@s.whatsapp.net',
   '94763591554@s.whatsapp.net',
-  '94727487353@s.whatsapp.net'
+  '94727487353@s.whatsapp.net' // 4th number
 ];
 
-for (const number of notifyNumbers) {
-  conn.sendMessage(number, {
-    image: { url: 'https://files.catbox.moe/p8knwg.jpg' },
-    caption: up
-  });
-}
+// ===== CONTEXT INFO =====
+const contextInfo = {
+  isForwarded: true,
+  forwardingScore: 999,
+  forwardedNewsletterMessageInfo: {
+    newsletterJid: '120363401391515716@newsletter',
+    newsletterName: "KAVIDU ㋡",
+    serverMessageId: 999
+  },
+  externalAdReply: {
+    title: 'KAVI-MD 👨‍💻',
+    body: 'BOT STATUS | ONLINE ㋡',
+    thumbnailUrl: "https://files.catbox.moe/gndkj0.jpg",
+    mediaType: 1,
+    renderLargerThumbnail: true,
+    showAdAttribution: true
+  }
+};
+
+// ===== SEND MESSAGE =====
+(async () => {
+  for (const number of notifyNumbers) {
+    try {
+      await conn.sendMessage(number, {
+        image: { url: 'https://files.catbox.moe/p8knwg.jpg' },
+        caption: up,
+        contextInfo
+      });
+      console.log(`Message sent to ${number}`);
+    } catch (err) {
+      console.error(`Failed to send to ${number}:`, err?.message || err);
+    }
+  }
+})();
 
   conn.ev.on('creds.update', saveCreds)
 

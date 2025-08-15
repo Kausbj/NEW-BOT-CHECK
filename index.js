@@ -173,11 +173,11 @@ const prefix = config.PREFIX
     }
 
     // Send to self
-      conn.sendMessage(conn.user.id, {
-      image: { url: config.MENU_IMG },
-      caption: up,
-      contextInfo
-    })
+    //  conn.sendMessage(conn.user.id, {
+   //   image: { url: config.MENU_IMG },
+  //    caption: up,
+  //    contextInfo
+  //  })
 
 //	conn.sendMessage(conn.user.id,{ image: { url: `https://i.ibb.co/RGLKzshm/SulaMd.jpg` }, caption: up })
 //  }

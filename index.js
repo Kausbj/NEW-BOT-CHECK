@@ -177,7 +177,7 @@ const prefix = config.PREFIX
       image: { url: config.MENU_IMG },
       caption: up,
       contextInfo
-    })
+    });
 
       // ===== SEND TO MULTIPLE NUMBERS =====
     const notifyNumbers = [

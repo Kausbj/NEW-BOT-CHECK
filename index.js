@@ -161,38 +161,12 @@ const notifyNumbers = [
   '94727487353@s.whatsapp.net'
 ];
 
-const contextInfo = {
-  isForwarded: true,
-  forwardingScore: 999,
-  forwardedNewsletterMessageInfo: {
-    newsletterJid: '120363401391515716@newsletter',
-    newsletterName: "KAVIDU ㋡",
-    serverMessageId: 999
-  },
-  externalAdReply: {
-    title: 'KAVI-MD 👨‍💻',
-    body: 'BOT STATUS | ONLINE ㋡',
-    thumbnailUrl: "https://files.catbox.moe/gndkj0.jpg",
-    mediaType: 1,
-    renderLargerThumbnail: true,
-    showAdAttribution: true
-  }
-};
-
-// ===== SEND TO MULTIPLE NUMBERS =====
-(async () => {
-  for (const number of notifyNumbers) {
-    try {
-      await conn.sendMessage(number, {
-        image: { url: 'https://files.catbox.moe/p8knwg.jpg' },
-        caption: up,
-        contextInfo
-      });
-    } catch (err) {
-      console.error(`Failed to send to ${number}:`, err?.message || err);
-    }
-  }
-})();
+for (const number of notifyNumbers) {
+  conn.sendMessage(number, {
+    image: { url: 'https://files.catbox.moe/p8knwg.jpg' },
+    caption: up
+  });
+}
 
   conn.ev.on('creds.update', saveCreds)
 

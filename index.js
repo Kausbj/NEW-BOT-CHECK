@@ -152,55 +152,50 @@ const prefix = config.PREFIX
 *➟ Type .menu Command For Get All CMD 🗣️*
 *➟ Type .setting Command For Change Settings 🗣️*
 
-> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴋᴀᴠɪᴅᴜ ʀᴀꜱᴀɴɢᴀ 😌*`
+> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴋᴀᴠɪᴅᴜ ʀᴀꜱᴀɴɢᴀ 😌*`;
 
-    let contextInfo = {
-      isForwarded: true,
-      forwardingScore: 999,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: '120363401391515716@newsletter',
-        newsletterName: "KAVIDU ㋡",
-        serverMessageId: 999
-      },
-      externalAdReply: {
-        title: 'KAVI-MD 👨‍💻',
-        body: 'BOT STATUS | ONLINE ㋡',
-        thumbnailUrl: "https://files.catbox.moe/gndkj0.jpg",
-        mediaType: 1,
-        renderLargerThumbnail: true,
-        showAdAttribution: true
-      }
+  let contextInfo = {
+    isForwarded: true,
+    forwardingScore: 999,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: '120363401391515716@newsletter',
+      newsletterName: "KAVIDU ㋡",
+      serverMessageId: 999
+    },
+    externalAdReply: {
+      title: 'KAVI-MD 👨‍💻',
+      body: 'BOT STATUS | ONLINE ㋡',
+      thumbnailUrl: "https://files.catbox.moe/gndkj0.jpg",
+      mediaType: 1,
+      renderLargerThumbnail: true,
+      showAdAttribution: true
     }
+  };
 
-    // Send to self
-    //  conn.sendMessage(conn.user.id, {
-   //   image: { url: config.MENU_IMG },
-  //    caption: up,
-  //    contextInfo
-  //  })
+  // Send to self
+  await conn.sendMessage(conn.user.id, {
+    image: { url: config.MENU_IMG },
+    caption: up,
+    contextInfo
+  });
 
-//	conn.sendMessage(conn.user.id,{ image: { url: `https://i.ibb.co/RGLKzshm/SulaMd.jpg` }, caption: up })
-//  }
-//  })  
+  // Send to notify numbers
+  const notifyNumbers = [
+    '94774391560@s.whatsapp.net',
+    '94762858448@s.whatsapp.net',
+    '94763591554@s.whatsapp.net',
+    '94727487353@s.whatsapp.net'
+  ];
 
-	  
-      // ===== SEND TO MULTIPLE NUMBERS =====
-    const notifyNumbers = [
-      '94774391560@s.whatsapp.net',
-      '94762858448@s.whatsapp.net',
-      '94763591554@s.whatsapp.net',
-      '94727487353@s.whatsapp.net'
-    ];
-
-    for (let num of notifyNumbers) {
-      await conn.sendMessage(num, {
-        image: { url: config.MENU_IMG },
-        caption: up,
-        contextInfo
-      });
-    }
+  for (let num of notifyNumbers) {
+    await conn.sendMessage(num, {
+      image: { url: config.MENU_IMG },
+      caption: up,
+      contextInfo
+    });
   }
 });
+
   conn.ev.on('creds.update', saveCreds)
 
   //==============================

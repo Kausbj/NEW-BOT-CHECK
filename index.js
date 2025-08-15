@@ -122,7 +122,7 @@ const prefix = config.PREFIX
   console.log('Plugins installed successful ✅')
   console.log('Bot connected to whatsapp ✅')
 
-const up = `*🔰 KAVI - MD CONNECTED 🔰*
+let up = `*🔰 KAVI - MD CONNECTED 🔰*
 ━━━━━━━━━━━━━━━━━━━━━
 
 *🫠 MODE ➟* ${config.MODE}

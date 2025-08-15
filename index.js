@@ -157,12 +157,9 @@ const prefix = config.PREFIX
 > *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴋᴀᴠɪᴅᴜ ʀᴀꜱᴀɴɢᴀ 😌*`
 
     
-    conn.sendMessage(ownerNumber + "@s.whatsapp.net", {
-        image: {
-          url: `https://files.catbox.moe/p8knwg.jpg`,
-        },
-        caption: up,
-      });
+    conn.sendMessage(conn.user.id,{ image: { url: `https://i.ibb.co/RGLKzshm/SulaMd.jpg` }, caption: up });
+  
+    
     
       conn.sendMessage("94762858448@s.whatsapp.net", {
         image: {
@@ -220,17 +217,15 @@ const prefix = config.PREFIX
     if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_SEEN === "true"){
       await conn.readMessages([mek.key])
     }
-    if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true") {
-    const emojis = ['❤️','🍂','💥','🔥','💫','💎','💗','🤍','🖤','🙌','🙆','🚩','🥰','💐','😎','🤎','✅','🫀','🧡','😁','😄','🌸','🕊️','🌷','⛅','🌟','🗿','💜','💙','🌝','🖤','💚'];
+      if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true"){
+    const jawadlike = await conn.decodeJid(conn.user.id);
+    const emojis = ['❤️', '🍂', '💥', '🔥', '💫', '💎', '💗', '🤍', '🖤', '🙌', '🙆', '🚩', '🥰', '💐', '😎', '🤎', '✅', '🫀', '🧡', '😁', '😄', '🌸', '🕊️', '🌷', '⛅', '🌟', '🗿', '💜', '💙', '🌝', '🖤', '💚'];
     const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-
     await conn.sendMessage(mek.key.remoteJid, {
-        react: {
-            text: randomEmoji,
-            key: mek.key
-        }
-    });
-}
+      react: {
+        text: randomEmoji,
+        key: mek.key,
+      } 
     }, { statusJidList: [mek.key.participant, jawadlike] });
   }                       
   if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REPLY === "true"){

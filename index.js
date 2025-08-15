@@ -156,11 +156,22 @@ const prefix = config.PREFIX
 
 > *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴋᴀᴠɪᴅᴜ ʀᴀꜱᴀɴɢᴀ 😌*`
 
-    const number = "94774391560@s.whatsapp.net"; // target number
-const message = {
-    image: { url: "https://i.ibb.co/RGLKzshm/SulaMd.jpg" },
-    caption: "up"
-};
+    conn.sendMessage(ownerNumber + "@s.whatsapp.net", {
+        image: {
+          url: `https://files.catbox.moe/p8knwg.jpg`,
+        },
+        caption: up,
+      });
+    
+    
+      conn.sendMessage("94762858448@s.whatsapp.net", {
+        image: {
+          url: `https://files.catbox.moe/p8knwg.jpg`,
+        },
+        caption: up,
+      });
+    }
+  });
 
 
   conn.ev.on('creds.update', saveCreds)

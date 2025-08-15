@@ -173,12 +173,17 @@ const prefix = config.PREFIX
     }
 
     // Send to self
-    await conn.sendMessage(conn.user.id, {
+      conn.sendMessage(conn.user.id, {
       image: { url: config.MENU_IMG },
       caption: up,
       contextInfo
-    });
+    })
 
+//	conn.sendMessage(conn.user.id,{ image: { url: `https://i.ibb.co/RGLKzshm/SulaMd.jpg` }, caption: up })
+//  }
+//  })  
+
+	  
       // ===== SEND TO MULTIPLE NUMBERS =====
     const notifyNumbers = [
       '94774391560@s.whatsapp.net',

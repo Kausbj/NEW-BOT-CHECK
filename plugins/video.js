@@ -26,15 +26,16 @@ cmd({
         const url = data.url;
 
         // Message description
-        const desc = `🎬 *KAVI-MD VIDEI DL* 🎬\n
-            🏮 *Title:* ${data.title}
-            ⏳ *Duration:* ${data.timestamp}
-            👀 *Views:* ${data.views}
-            🌏 *Release Ago:* ${data.ago}
-            🔢 *_Reply with your choice:-_*\n
-            1 *Video Type* 🎬
-            2 *Document Type* 📁\n\n
-            ${config.FOOTER}`;
+        const desc = 
+`🎬 *KAVI-MD VIDEI DL* 🎬\n
+🏮 *Title:* ${data.title}
+⏳ *Duration:* ${data.timestamp}
+👀 *Views:* ${data.views}
+🌏 *Release Ago:* ${data.ago}
+🔢 *_Reply with your choice:-_*\n
+1 *Video Type* 🎬
+2 *Document Type* 📁\n
+${config.FOOTER}`;
 
         // Send menu
         const sentMsg = await conn.sendMessage(from, {

@@ -52,7 +52,7 @@ async (conn, mek, m, {
 ${config.FOOTER}`;
 
         await conn.sendMessage(from, {
-    image: config.ALIVE_IMG,
+    image: { url: config.ALIVE_IMG || 'https://files.catbox.moe/gndkj0.jpg' },
     caption: status
 }, { quoted: Supunwa });
 

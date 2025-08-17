@@ -1,120 +1,94 @@
-// movie.js
 const { cmd } = require('../command');
-const config = require('../config');
 const axios = require('axios');
+const config = require('../config');
+const TMDB_KEY = "6284396e268fba60f0203b8b4b361ffe";
+const OMDB_KEY = "76cb7f39";
 
-const API_KEY = "FreeMovie";
-const BASE_URL = "https://anju-md-api.vercel.app/api/hdhub";
+async function translateToSinhala(text) {
+    try {
+        const res = await axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|si`);
+        return res.data.responseData.translatedText || text;
+    } catch {
+        return text;
+    }
+}
 
-// ========== SEARCH MOVIE ==========
 cmd({
-    pattern: "movie",
-    desc: "Search movies and download",
+    pattern: "movieinfo",
+    desc: "Get HD official movie poster with Sinhala details",
     category: "movie",
-    react: "🎬",
+    react: "♻️",
+    alias: ['info', 'in'],
+
     filename: __filename
 },
-async (conn, mek, m, { args, reply }) => {
-    if (!args[0]) return reply("*Usage:* .movie <movie name>");
+async (conn, mek, m, { from, q, reply }) => {
+    if (!q) return reply("❗කරුණාකර චිත්‍රපටයේ නම දෙන්න.\nඋදා: `.movie Avengers Endgame`");
 
     try {
-        let query = args.join(" ");
-        let searchUrl = `${BASE_URL}?q=${encodeURIComponent(query)}&apikey=${API_KEY}`;
-        let { data } = await axios.get(searchUrl);
+        // Search movie from TMDB
+        const searchRes = await axios.get(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`);
+        if (!searchRes.data.results.length) return reply("😓 චිත්‍රපටය සොයාගත නොහැකි විය.");
 
-        if (!data.result || data.result.length === 0) {
-            return reply("❌ No results found!");
-        }
+        const movie = searchRes.data.results[0];
+        const movieId = movie.id;
 
-        let txt = `*🎬 Search Results for:* ${query}\n\n`;
-        data.result.slice(0, 5).forEach((movie, i) => {
-            txt += `*${i + 1}. ${movie.title}*\n🔗 Use: *.minfo ${movie.url}*\n\n`;
-        });
+        // Movie details
+        const detailsRes = await axios.get(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_KEY}`);
+        const poster = `https://image.tmdb.org/t/p/original${detailsRes.data.poster_path}`;
 
-        reply(txt);
+        // OMDb info
+        const omdbRes = await axios.get(`http://www.omdbapi.com/?t=${encodeURIComponent(q)}&apikey=${OMDB_KEY}`);
+        const omdb = omdbRes.data;
 
-    } catch (e) {
-        console.log(e);
-        reply("⚠️ Error while searching movies!");
+        // Translate plot
+        const englishPlot = omdb.Plot || detailsRes.data.overview || "N/A";
+        const sinhalaPlot = await translateToSinhala(englishPlot);
+
+        // Sinhala caption
+        const caption = `🩸 *Movie Name:-* ${omdb.Title || movie.title} (${omdb.Year || detailsRes.data.release_date?.slice(0, 4)})\n\n` +
+                        `⭐ *IMDb අගය:* ${omdb.imdbRating || "N/A"}\n` +
+                        `🎭 *කාණ්ඩය:* ${omdb.Genre || "N/A"}\n` +
+                        `🕒 *ධාවන කාලය:* ${omdb.Runtime || "N/A"}\n\n` +
+                        `🗣️ *අවශ්‍ය අනෙක් ගෘප් ලින්ක් සහ වෙනත් දෑ චැනල් එකෙන් ගන්න, ෆලෝ කරල තියාගන්න 👇*\n\n` +
+                        `📌 *Movie Channel :- _https://whatsapp.com/channel/0029Vb5xFPHGE56jTnm4ZD2k_*\n\n` +
+                        `📌 *Song Channel :- _https://whatsapp.com/channel/0029VbAdks3I7BeO8aUGNG06_*\n\n` +
+                        `🗣️ *කතා විස්තරය :* ${sinhalaPlot}\n\n` +
+                        `${config.MOVIE_FOOTER}`;
+
+        // Verified + Newsletter Style
+        const newsletterInfo = {
+            key: {
+                remoteJid: 'status@broadcast',
+                participant: '0@s.whatsapp.net'
+            },
+            message: {
+                newsletterAdminInviteMessage: {
+                    newsletterJid: '120363417070951702@newsletter',
+                    newsletterName: "MOVIE CIRCLE",
+                    caption: "𝙳𝙴𝚃𝙰𝙸𝙻𝚂 𝙲𝙰𝚁𝙳 𝚅𝙴𝚁𝙸𝙵𝙸𝙴𝙳 𝙱𝚈 𝙺𝙰𝚅𝙸𝙳𝚄 𝚁𝙰𝚂𝙰𝙽𝙶𝙰",
+                    inviteExpiration: 0
+                }
+            }
+        };
+
+        await conn.sendMessage(from, {
+            image: { url: poster },
+            caption: caption,
+            contextInfo: {
+                isForwarded: true,
+                forwardingScore: 999,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '120363417070951702@newsletter',
+                    newsletterName: 'KAVIDU RASANGA ツ',
+                    serverMessageId: 143
+                }
+            }
+        }, { quoted: newsletterInfo });
+
+    } catch (err) {
+        console.error(err);
+        reply("❌ දෝෂයක් ඇතිවිය. නැවත උත්සාහ කරන්න.");
     }
 });
-
-// ========== MOVIE INFO ==========
-cmd({
-    pattern: "minfo",
-    desc: "Get movie info + download",
-    category: "movie",
-    react: "ℹ️",
-    filename: __filename
-},
-async (conn, mek, m, { args, reply }) => {
-    if (!args[0]) return reply("*Usage:* .minfo <movie_url>");
-
-    try {
-        let url = args[0];
-        let infoUrl = `${BASE_URL}?url=${encodeURIComponent(url)}&apikey=${API_KEY}`;
-        let { data } = await axios.get(infoUrl);
-
-        if (!data.result) return reply("❌ No info found!");
-
-        let movie = data.result;
-        let txt = `*🎬 ${movie.title}*\n\n`;
-        txt += `📅 Year: ${movie.year}\n`;
-        txt += `🌐 Language: ${movie.language}\n`;
-        txt += `📦 Quality: ${movie.quality}\n\n`;
-        txt += `➡️ Choose quality with:\n*.mdll <dlLink>*`;
-
-        await conn.sendMessage(m.chat, {
-            image: { url: movie.image },
-            caption: txt
-        }, { quoted: mek });
-
-        if (movie.dlLink) {
-            await conn.sendMessage(m.chat, { text: `🔗 Download Link:\n*.mdll ${movie.dlLink}*` }, { quoted: mek });
-        }
-
-    } catch (e) {
-        console.log(e);
-        reply("⚠️ Error while fetching movie info!");
-    }
-});
-
-// ========== DOWNLOAD MOVIE ==========
-cmd({
-    pattern: "mdll",
-    desc: "Download movie file",
-    category: "movie",
-    react: "⬇️",
-    filename: __filename
-},
-async (conn, mek, m, { args, reply }) => {
-    if (!args[0]) return reply("*Usage:* .mdll <dlLink>");
-
-    try {
-        let dlLink = args[0];
-        let dllUrl = `${BASE_URL}?dlLink=${encodeURIComponent(dlLink)}&apikey=${API_KEY}`;
-        let { data } = await axios.get(dllUrl);
-
-        if (!data.result || data.result.length === 0) {
-            return reply("❌ No download links found!");
-        }
-
-        // Pick the first available link
-        let file = data.result[0];
-        let fileUrl = file.url;
-        let quality = file.quality || "Movie";
-
-        reply(`📥 *Downloading...*\n\n🎬 *Quality:* ${quality}`);
-
-        await conn.sendMessage(m.chat, {
-            document: { url: fileUrl },
-            mimetype: "video/mp4",
-            fileName: `${quality}.mp4`,
-            caption: `🎬 *Movie Downloaded Successfully*\nQuality: ${quality}`
-        }, { quoted: mek });
-
-    } catch (e) {
-        console.log(e);
-        reply("⚠️ Error while downloading movie!");
-    }
-});
+;

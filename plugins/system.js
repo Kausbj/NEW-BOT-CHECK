@@ -52,7 +52,7 @@ async (conn, mek, m, {
 ${config.FOOTER}`;
 
         await conn.sendMessage(from, {
-    image: `${config.ALIVE_IMG}`,
+    image: config.ALIVE_IMG,
     caption: status
 }, { quoted: Supunwa });
 

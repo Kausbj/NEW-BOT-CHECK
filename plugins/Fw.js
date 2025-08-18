@@ -1,18 +1,17 @@
-// Jawad TechX - KHAN MD 
-// Dont Remove Credit From File 
+
 
 const { cmd } = require("../command");
 
 // Safety Configuration
 const SAFETY = {
   MAX_JIDS: 20,
-  BASE_DELAY: 2000,  // jawad on top 🔝
-  EXTRA_DELAY: 4000,  // huh don't copy mine file 
+  BASE_DELAY: 2000,  
+  EXTRA_DELAY: 4000,  
 };
 
 cmd({
   pattern: "forward",
-  alias: ["fwd"],
+  alias: ["f"],
   desc: "Bulk forward media to groups (newsletter style)",
   category: "owner",
   filename: __filename
@@ -115,7 +114,7 @@ cmd({
         newsletterAdminInviteMessage: {
           newsletterJid: "120363417070951702@newsletter",
           newsletterName: "MOVIE CIRCLE",
-          caption: "𝙳𝙴𝚃𝙰𝙸𝙻𝚂 𝙲𝙰𝚁𝙳 𝚅𝙴𝚁𝙸𝙵𝙸𝙴𝙳 𝙱𝚈 𝙺𝙰𝚅𝙸𝙳𝚄 𝚁𝙰𝚂𝙰𝙽𝙶𝙰",
+          caption: "𝙺𝙰𝚅𝙸 𝙼𝙳 𝙼𝙾𝚅𝙸𝙴 𝚅𝙴𝚁𝙸𝙵𝙸𝙴𝙳",
           inviteExpiration: 0,
         },
       },
@@ -136,7 +135,7 @@ cmd({
               forwardingScore: 999,
               forwardedNewsletterMessageInfo: {
                 newsletterJid: "120363417070951702@newsletter",
-                newsletterName: "KAVIDU RASANGA ツ",
+                newsletterName: "KAVIDU RASANGA 💀",
                 serverMessageId: 143,
               },
             },
@@ -158,8 +157,8 @@ cmd({
     }
 
     // ===== [REPORT] ===== //
-    let report = `✅ *Forward Complete*\n\n` +
-                 `📤 Success: ${successCount}/${validJids.length}\n` +
+    let report = `✅ *Forward Successful*\n\n` +
+                 `🌴 Success: ${successCount}/${validJids.length}\n` +
                  `📦 Content Type: ${mtype.replace("Message", "") || "text"}\n`;
 
     if (failedJids.length > 0) {

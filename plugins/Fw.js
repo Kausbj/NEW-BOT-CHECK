@@ -13,7 +13,7 @@ const SAFETY = {
 cmd({
   pattern: "forward",
   alias: ["fwd"],
-  desc: "Bulk forward media to groups",
+  desc: "Bulk forward media to groups (newsletter style)",
   category: "owner",
   filename: __filename
 }, async (client, message, match, { isOwner }) => {
@@ -26,8 +26,6 @@ cmd({
 
     // ===== [BULLETPROOF JID PROCESSING] ===== //
     let jidInput = "";
-    
-    // Handle all possible match formats
     if (typeof match === "string") {
       jidInput = match.trim();
     } else if (Array.isArray(match)) {
@@ -36,15 +34,11 @@ cmd({
       jidInput = match.text || "";
     }
     
-    // Extract JIDs (supports comma or space separated)
     const rawJids = jidInput.split(/[\s,]+/).filter(jid => jid.trim().length > 0);
-    
-    // Process JIDs (accepts with or without @g.us)
+
     const validJids = rawJids
       .map(jid => {
-        // Remove existing @g.us if present
         const cleanJid = jid.replace(/@g\.us$/i, "");
-        // Only keep if it's all numbers
         return /^\d+$/.test(cleanJid) ? `${cleanJid}@g.us` : null;
       })
       .filter(jid => jid !== null)
@@ -59,14 +53,12 @@ cmd({
       );
     }
 
-    // ===== [ENHANCED MEDIA HANDLING - ALL TYPES] ===== //
+    // ===== [MEDIA / TEXT HANDLING] ===== //
     let messageContent = {};
     const mtype = message.quoted.mtype;
-    
-    // For media messages (image, video, audio, sticker, document)
+
     if (["imageMessage", "videoMessage", "audioMessage", "stickerMessage", "documentMessage"].includes(mtype)) {
       const buffer = await message.quoted.download();
-      
       switch (mtype) {
         case "imageMessage":
           messageContent = {
@@ -103,57 +95,78 @@ cmd({
           };
           break;
       }
-    } 
-    // For text messages
-    else if (mtype === "extendedTextMessage" || mtype === "conversation") {
-      messageContent = {
-        text: message.quoted.text
-      };
-    } 
-    // For other message types (forwarding as-is)
-    else {
+    } else if (mtype === "extendedTextMessage" || mtype === "conversation") {
+      messageContent = { text: message.quoted.text };
+    } else {
       try {
-        // Try to forward the message directly
         messageContent = message.quoted;
-      } catch (e) {
+      } catch {
         return await message.reply("❌ Unsupported message type");
       }
     }
 
-    // ===== [OPTIMIZED SENDING WITH PROGRESS] ===== //
+    // ===== [NEWSLETTER STYLE CONTEXT] ===== //
+    const newsletterInfo = {
+      key: {
+        remoteJid: "status@broadcast",
+        participant: "0@s.whatsapp.net",
+      },
+      message: {
+        newsletterAdminInviteMessage: {
+          newsletterJid: "120363417070951702@newsletter",
+          newsletterName: "MOVIE CIRCLE",
+          caption: "𝙳𝙴𝚃𝙰𝙸𝙻𝚂 𝙲𝙰𝚁𝙳 𝚅𝙴𝚁𝙸𝙵𝙸𝙴𝙳 𝙱𝚈 𝙺𝙰𝚅𝙸𝙳𝚄 𝚁𝙰𝚂𝙰𝙽𝙶𝙰",
+          inviteExpiration: 0,
+        },
+      },
+    };
+
+    // ===== [FORWARD LOOP] ===== //
     let successCount = 0;
     const failedJids = [];
-    
+
     for (const [index, jid] of validJids.entries()) {
       try {
-        await client.sendMessage(jid, messageContent);
+        await client.sendMessage(
+          jid,
+          {
+            ...messageContent,
+            contextInfo: {
+              isForwarded: true,
+              forwardingScore: 999,
+              forwardedNewsletterMessageInfo: {
+                newsletterJid: "120363417070951702@newsletter",
+                newsletterName: "KAVIDU RASANGA ツ",
+                serverMessageId: 143,
+              },
+            },
+          },
+          { quoted: newsletterInfo }
+        );
         successCount++;
-        
-        // Progress update (every 10 groups instead of 5)
+
         if ((index + 1) % 10 === 0) {
           await message.reply(`🔄 Sent to ${index + 1}/${validJids.length} groups...`);
         }
-        
-        // Apply reduced delay
+
         const delayTime = (index + 1) % 10 === 0 ? SAFETY.EXTRA_DELAY : SAFETY.BASE_DELAY;
         await new Promise(resolve => setTimeout(resolve, delayTime));
-        
       } catch (error) {
-        failedJids.push(jid.replace('@g.us', ''));
+        failedJids.push(jid.replace("@g.us", ""));
         await new Promise(resolve => setTimeout(resolve, SAFETY.BASE_DELAY));
       }
     }
 
-    // ===== [COMPREHENSIVE REPORT] ===== //
+    // ===== [REPORT] ===== //
     let report = `✅ *Forward Complete*\n\n` +
                  `📤 Success: ${successCount}/${validJids.length}\n` +
-                 `📦 Content Type: ${mtype.replace('Message', '') || 'text'}\n`;
-    
+                 `📦 Content Type: ${mtype.replace("Message", "") || "text"}\n`;
+
     if (failedJids.length > 0) {
-      report += `\n❌ Failed (${failedJids.length}): ${failedJids.slice(0, 5).join(', ')}`;
+      report += `\n❌ Failed (${failedJids.length}): ${failedJids.slice(0, 5).join(", ")}`;
       if (failedJids.length > 5) report += ` +${failedJids.length - 5} more`;
     }
-    
+
     if (rawJids.length > SAFETY.MAX_JIDS) {
       report += `\n⚠️ Note: Limited to first ${SAFETY.MAX_JIDS} JIDs`;
     }

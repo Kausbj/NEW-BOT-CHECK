@@ -4,7 +4,7 @@ const { cmd, commands } = require('../command')
 const config = require('../config');
 const {fetchJson} = require('../lib/functions');
 
-const api = `https://nethu-api-ashy.vercel.app`;
+const api = `https://saviya-kolla-api.koyeb.app`;
 
 cmd({
   pattern: "facebook",

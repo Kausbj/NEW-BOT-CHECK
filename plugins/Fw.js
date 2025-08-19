@@ -1,29 +1,100 @@
-
-
+// forward-largefile.js
 const { cmd } = require("../command");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+const { pipeline } = require("stream");
+const { promisify } = require("util");
+const pump = promisify(pipeline);
 
-// Safety Configuration
 const SAFETY = {
   MAX_JIDS: 20,
-  BASE_DELAY: 2000,  
-  EXTRA_DELAY: 4000,  
+  BASE_DELAY: 2000,
+  EXTRA_DELAY: 4000,
+  PROGRESS_NOTIFY_EVERY: 10 // every N sends notify owner
 };
+
+function makeTempPath(fileName = "forward_tmp") {
+  const tid = Date.now() + "-" + Math.round(Math.random() * 10000);
+  const fname = `${fileName}-${tid}`;
+  return path.join(os.tmpdir(), fname);
+}
+
+/**
+ * Save quoted media to a temp file.
+ * Handles either Buffer or readable stream or an object from some libs.
+ * Returns { filePath, fileName, mimeType }
+ */
+async function saveQuotedToFile(quoted) {
+  // Try to derive filename & mimetype
+  const fileName = (quoted && (quoted.fileName || quoted.filename || quoted.name)) || `file`;
+  const mimeType = (quoted && (quoted.mimetype || quoted.mimetype || quoted.mimetype)) || "application/octet-stream";
+  const tmpPath = makeTempPath(fileName);
+  const filePath = tmpPath + (path.extname(fileName) || "");
+
+  // If quoted has a download() helper (Baileys style)
+  if (quoted && typeof quoted.download === "function") {
+    // Some implementations return Buffer, some return stream.
+    const dl = await quoted.download();
+    // If Buffer
+    if (Buffer.isBuffer(dl)) {
+      await fs.promises.writeFile(filePath, dl);
+      return { filePath, fileName, mimeType };
+    }
+    // If stream (detect readable)
+    if (dl && typeof dl.pipe === "function") {
+      const ws = fs.createWriteStream(filePath);
+      await pump(dl, ws);
+      return { filePath, fileName, mimeType };
+    }
+    // If returns object with content property
+    if (dl && dl.content && Buffer.isBuffer(dl.content)) {
+      await fs.promises.writeFile(filePath, dl.content);
+      return { filePath, fileName, mimeType };
+    }
+  }
+
+  // Fallback: try if quoted has .url property (already uploaded media)
+  if (quoted && quoted.url) {
+    // Some Baileys variants require client.waUploadToServer - but we can't call it here.
+    // Try to stream from the URL using native https request (best-effort).
+    // NOTE: If your environment blocks external requests, this fallback may fail.
+    const https = require("https");
+    await new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(filePath);
+      https.get(quoted.url, res => {
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}`));
+        }
+        res.pipe(file);
+        file.on("finish", () => file.close(resolve));
+        file.on("error", reject);
+      }).on("error", reject);
+    });
+    return { filePath, fileName, mimeType };
+  }
+
+  // Last resort: if quoted is already a Buffer-like object
+  if (quoted && Buffer.isBuffer(quoted)) {
+    await fs.promises.writeFile(filePath, quoted);
+    return { filePath, fileName, mimeType };
+  }
+
+  throw new Error("Unable to download quoted message media (no supported download method).");
+}
 
 cmd({
   pattern: "forward",
-  alias: ["f"],
-  desc: "Bulk forward media to groups (newsletter style)",
+  alias: ["f", "fwd"],
+  desc: "Bulk forward media to groups (newsletter style) - supports large files by streaming",
   category: "owner",
   filename: __filename
 }, async (client, message, match, { isOwner }) => {
   try {
-    // Owner check
     if (!isOwner) return await message.reply("*📛 Owner Only Command*");
-    
-    // Quoted message check
-    if (!message.quoted) return await message.reply("*🍁 Please reply to a message*");
+    if (!message.quoted) return await message.reply("*🍁 Please reply to a message to forward*");
 
-    // ===== [BULLETPROOF JID PROCESSING] ===== //
+    // BUILD JID LIST (robust)
     let jidInput = "";
     if (typeof match === "string") {
       jidInput = match.trim();
@@ -32,79 +103,38 @@ cmd({
     } else if (match && typeof match === "object") {
       jidInput = match.text || "";
     }
-    
-    const rawJids = jidInput.split(/[\s,]+/).filter(jid => jid.trim().length > 0);
-
+    const rawJids = jidInput.split(/[\s,]+/).filter(j => j && j.length > 0);
     const validJids = rawJids
       .map(jid => {
-        const cleanJid = jid.replace(/@g\.us$/i, "");
-        return /^\d+$/.test(cleanJid) ? `${cleanJid}@g.us` : null;
+        const clean = jid.replace(/@g\.us$/i, "").replace(/\D/g, "");
+        return /^\d+$/.test(clean) ? `${clean}@g.us` : null;
       })
-      .filter(jid => jid !== null)
+      .filter(Boolean)
       .slice(0, SAFETY.MAX_JIDS);
 
     if (validJids.length === 0) {
       return await message.reply(
-        "❌ No valid group JIDs found\n" +
-        "Examples:\n" +
-        ".fwd 120363411055156472@g.us,120363333939099948@g.us\n" +
-        ".fwd 120363411055156472 120363333939099948"
+        "❌ No valid group JIDs found.\nExamples:\n.fwd 120363411055156472@g.us,120363333939099948@g.us\n.fwd 120363411055156472 120363333939099948"
       );
     }
 
-    // ===== [MEDIA / TEXT HANDLING] ===== //
-    let messageContent = {};
-    const mtype = message.quoted.mtype;
+    // Try to save quoted to temp file (stream-friendly)
+    await message.reply("⏳ Preparing quoted media for forwarding (this may take a while for big files)...");
 
-    if (["imageMessage", "videoMessage", "audioMessage", "stickerMessage", "documentMessage"].includes(mtype)) {
-      const buffer = await message.quoted.download();
-      switch (mtype) {
-        case "imageMessage":
-          messageContent = {
-            image: buffer,
-            caption: message.quoted.text || '',
-            mimetype: message.quoted.mimetype || "image/jpeg"
-          };
-          break;
-        case "videoMessage":
-          messageContent = {
-            video: buffer,
-            caption: message.quoted.text || '',
-            mimetype: message.quoted.mimetype || "video/mp4"
-          };
-          break;
-        case "audioMessage":
-          messageContent = {
-            audio: buffer,
-            mimetype: message.quoted.mimetype || "audio/mp4",
-            ptt: message.quoted.ptt || false
-          };
-          break;
-        case "stickerMessage":
-          messageContent = {
-            sticker: buffer,
-            mimetype: message.quoted.mimetype || "image/webp"
-          };
-          break;
-        case "documentMessage":
-          messageContent = {
-            document: buffer,
-            mimetype: message.quoted.mimetype || "application/octet-stream",
-            fileName: message.quoted.fileName || "document"
-          };
-          break;
-      }
-    } else if (mtype === "extendedTextMessage" || mtype === "conversation") {
-      messageContent = { text: message.quoted.text };
-    } else {
-      try {
-        messageContent = message.quoted;
-      } catch {
-        return await message.reply("❌ Unsupported message type");
-      }
+    let saved;
+    try {
+      saved = await saveQuotedToFile(message.quoted);
+    } catch (err) {
+      console.error("Save quoted failed:", err);
+      return await message.reply(`❌ Unable to download quoted media: ${err.message}`);
     }
 
-    // ===== [NEWSLETTER STYLE CONTEXT] ===== //
+    const { filePath, fileName, mimeType } = saved;
+    // Get file size
+    const stat = await fs.promises.stat(filePath);
+    const fileSizeBytes = stat.size;
+
+    // Newsletter context (same as your original)
     const newsletterInfo = {
       key: {
         remoteJid: "status@broadcast",
@@ -120,50 +150,57 @@ cmd({
       },
     };
 
-    // ===== [FORWARD LOOP] ===== //
     let successCount = 0;
     const failedJids = [];
 
+    // Send as document stream to avoid loading into memory
     for (const [index, jid] of validJids.entries()) {
       try {
-        await client.sendMessage(
-          jid,
-          {
-            ...messageContent,
-            contextInfo: {
-              isForwarded: true,
-              forwardingScore: 999,
-              forwardedNewsletterMessageInfo: {
-                newsletterJid: "120363417070951702@newsletter",
-                newsletterName: "KAVIDU RASANGA 💀",
-                serverMessageId: 143,
-              },
-            },
-          },
-          { quoted: newsletterInfo }
-        );
+        // recreate read stream for each send (can't reuse stream)
+        const fileStream = fs.createReadStream(filePath);
+
+        await client.sendMessage(jid, {
+          document: fileStream,
+          fileName: fileName,
+          mimetype: mimeType,
+          fileLength: fileSizeBytes
+        }, {
+          quoted: newsletterInfo,
+          // optional: set "contextInfo" if you want to preserve forwarded flags
+          // contextInfo: { forwardingScore: 999, isForwarded: true }
+        });
+
         successCount++;
 
-        if ((index + 1) % 10 === 0) {
+        if ((index + 1) % SAFETY.PROGRESS_NOTIFY_EVERY === 0) {
           await message.reply(`🔄 Sent to ${index + 1}/${validJids.length} groups...`);
         }
 
-        const delayTime = (index + 1) % 10 === 0 ? SAFETY.EXTRA_DELAY : SAFETY.BASE_DELAY;
-        await new Promise(resolve => setTimeout(resolve, delayTime));
-      } catch (error) {
+        const delayTime = (index + 1) % SAFETY.PROGRESS_NOTIFY_EVERY === 0 ? SAFETY.EXTRA_DELAY : SAFETY.BASE_DELAY;
+        await new Promise(res => setTimeout(res, delayTime));
+      } catch (err) {
+        console.error("Send to", jid, "failed:", err && err.message);
         failedJids.push(jid.replace("@g.us", ""));
-        await new Promise(resolve => setTimeout(resolve, SAFETY.BASE_DELAY));
+        await new Promise(res => setTimeout(res, SAFETY.BASE_DELAY));
       }
     }
 
-    // ===== [REPORT] ===== //
-    let report = `✅ *Forward Successful*\n\n` +
+    // cleanup temp
+    try {
+      await fs.promises.unlink(filePath);
+    } catch (e) {
+      // ignore
+    }
+
+    // REPORT
+    let report = `✅ *Forward Completed*\n\n` +
                  `🌴 Success: ${successCount}/${validJids.length}\n` +
-                 `📦 Content Type: ${mtype.replace("Message", "") || "text"}\n`;
+                 `📦 File: ${fileName}\n` +
+                 `🧾 Size: ${(fileSizeBytes / (1024 * 1024)).toFixed(2)} MB\n`;
 
     if (failedJids.length > 0) {
-      report += `\n❌ Failed (${failedJids.length}): ${failedJids.slice(0, 5).join(", ")}`;
-      if (failedJids.length > 5) report += ` +${failedJids.length - 5} more`;
+      report += `\n❌ Failed (${failedJids.length}): ${failedJids.slice(0, 8).join(", ")}`;
+      if (failedJids.length > 8) report += ` +${failedJids.length - 8} more`;
     }
 
     if (rawJids.length > SAFETY.MAX_JIDS) {
@@ -171,15 +208,11 @@ cmd({
     }
 
     await message.reply(report);
-
   } catch (error) {
     console.error("Forward Error:", error);
     await message.reply(
-      `💢 Error: ${error.message.substring(0, 100)}\n\n` +
-      `Please try again or check:\n` +
-      `1. JID formatting\n` +
-      `2. Media type support\n` +
-      `3. Bot permissions`
+      `💢 Error: ${error && error.message ? error.message.substring(0, 200) : String(error)}\n\n` +
+      `Check:\n1) Bot permissions in target groups\n2) Quoted media availability\n3) WhatsApp file size limit (approx 2GB)`
     );
   }
 });

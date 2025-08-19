@@ -1,18 +1,19 @@
-
+// Jawad TechX - KHAN MD 
+// Dont Remove Credit From File 
 
 const { cmd } = require("../command");
 
 // Safety Configuration
 const SAFETY = {
   MAX_JIDS: 20,
-  BASE_DELAY: 2000,  
-  EXTRA_DELAY: 4000,  
+  BASE_DELAY: 2000,  // jawad on top 🔝
+  EXTRA_DELAY: 4000,  // huh don't copy mine file 
 };
 
 cmd({
   pattern: "forward",
-  alias: ["f"],
-  desc: "Bulk forward media to groups (newsletter style)",
+  alias: ["fwd"],
+  desc: "Bulk forward media to groups",
   category: "owner",
   filename: __filename
 }, async (client, message, match, { isOwner }) => {
@@ -25,6 +26,8 @@ cmd({
 
     // ===== [BULLETPROOF JID PROCESSING] ===== //
     let jidInput = "";
+    
+    // Handle all possible match formats
     if (typeof match === "string") {
       jidInput = match.trim();
     } else if (Array.isArray(match)) {
@@ -33,11 +36,15 @@ cmd({
       jidInput = match.text || "";
     }
     
+    // Extract JIDs (supports comma or space separated)
     const rawJids = jidInput.split(/[\s,]+/).filter(jid => jid.trim().length > 0);
-
+    
+    // Process JIDs (accepts with or without @g.us)
     const validJids = rawJids
       .map(jid => {
+        // Remove existing @g.us if present
         const cleanJid = jid.replace(/@g\.us$/i, "");
+        // Only keep if it's all numbers
         return /^\d+$/.test(cleanJid) ? `${cleanJid}@g.us` : null;
       })
       .filter(jid => jid !== null)
@@ -52,12 +59,14 @@ cmd({
       );
     }
 
-    // ===== [MEDIA / TEXT HANDLING] ===== //
+    // ===== [ENHANCED MEDIA HANDLING - ALL TYPES] ===== //
     let messageContent = {};
     const mtype = message.quoted.mtype;
-
+    
+    // For media messages (image, video, audio, sticker, document)
     if (["imageMessage", "videoMessage", "audioMessage", "stickerMessage", "documentMessage"].includes(mtype)) {
       const buffer = await message.quoted.download();
+      
       switch (mtype) {
         case "imageMessage":
           messageContent = {
@@ -94,78 +103,57 @@ cmd({
           };
           break;
       }
-    } else if (mtype === "extendedTextMessage" || mtype === "conversation") {
-      messageContent = { text: message.quoted.text };
-    } else {
+    } 
+    // For text messages
+    else if (mtype === "extendedTextMessage" || mtype === "conversation") {
+      messageContent = {
+        text: message.quoted.text
+      };
+    } 
+    // For other message types (forwarding as-is)
+    else {
       try {
+        // Try to forward the message directly
         messageContent = message.quoted;
-      } catch {
+      } catch (e) {
         return await message.reply("❌ Unsupported message type");
       }
     }
 
-    // ===== [NEWSLETTER STYLE CONTEXT] ===== //
-    const newsletterInfo = {
-      key: {
-        remoteJid: "status@broadcast",
-        participant: "0@s.whatsapp.net",
-      },
-      message: {
-        newsletterAdminInviteMessage: {
-          newsletterJid: "120363417070951702@newsletter",
-          newsletterName: "MOVIE CIRCLE",
-          caption: "𝙺𝙰𝚅𝙸 𝙼𝙳 𝙼𝙾𝚅𝙸𝙴 𝚅𝙴𝚁𝙸𝙵𝙸𝙴𝙳",
-          inviteExpiration: 0,
-        },
-      },
-    };
-
-    // ===== [FORWARD LOOP] ===== //
+    // ===== [OPTIMIZED SENDING WITH PROGRESS] ===== //
     let successCount = 0;
     const failedJids = [];
-
+    
     for (const [index, jid] of validJids.entries()) {
       try {
-        await client.sendMessage(
-          jid,
-          {
-            ...messageContent,
-            contextInfo: {
-              isForwarded: true,
-              forwardingScore: 999,
-              forwardedNewsletterMessageInfo: {
-                newsletterJid: "120363417070951702@newsletter",
-                newsletterName: "KAVIDU RASANGA 💀",
-                serverMessageId: 143,
-              },
-            },
-          },
-          { quoted: newsletterInfo }
-        );
+        await client.sendMessage(jid, messageContent);
         successCount++;
-
+        
+        // Progress update (every 10 groups instead of 5)
         if ((index + 1) % 10 === 0) {
           await message.reply(`🔄 Sent to ${index + 1}/${validJids.length} groups...`);
         }
-
+        
+        // Apply reduced delay
         const delayTime = (index + 1) % 10 === 0 ? SAFETY.EXTRA_DELAY : SAFETY.BASE_DELAY;
         await new Promise(resolve => setTimeout(resolve, delayTime));
+        
       } catch (error) {
-        failedJids.push(jid.replace("@g.us", ""));
+        failedJids.push(jid.replace('@g.us', ''));
         await new Promise(resolve => setTimeout(resolve, SAFETY.BASE_DELAY));
       }
     }
 
-    // ===== [REPORT] ===== //
-    let report = `✅ *Forward Successful*\n\n` +
-                 `🌴 Success: ${successCount}/${validJids.length}\n` +
-                 `📦 Content Type: ${mtype.replace("Message", "") || "text"}\n`;
-
+    // ===== [COMPREHENSIVE REPORT] ===== //
+    let report = `✅ *Forward Complete*\n\n` +
+                 `📤 Success: ${successCount}/${validJids.length}\n` +
+                 `📦 Content Type: ${mtype.replace('Message', '') || 'text'}\n`;
+    
     if (failedJids.length > 0) {
-      report += `\n❌ Failed (${failedJids.length}): ${failedJids.slice(0, 5).join(", ")}`;
+      report += `\n❌ Failed (${failedJids.length}): ${failedJids.slice(0, 5).join(', ')}`;
       if (failedJids.length > 5) report += ` +${failedJids.length - 5} more`;
     }
-
+    
     if (rawJids.length > SAFETY.MAX_JIDS) {
       report += `\n⚠️ Note: Limited to first ${SAFETY.MAX_JIDS} JIDs`;
     }

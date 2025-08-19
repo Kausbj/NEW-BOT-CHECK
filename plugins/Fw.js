@@ -99,7 +99,7 @@ cmd({
           messageContent = {
             document: buffer,
             mimetype: message.quoted.mimetype || "application/octet-stream",
-            fileName: message.quoted.fileName || "document"
+            fileName: message.quoted.fileName || "document/mkv"
           };
           break;
       }

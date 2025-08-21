@@ -2,6 +2,8 @@ const { cmd } = require('../command')
 const fetch = require('node-fetch')
 const { sizeFormatter } = require('human-readable')
 
+const POWER_CAPTION = '> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴋᴀᴠɪᴅᴜ ʀᴀꜱᴀɴɢᴀ 🫟*'
+
 const formatSize = sizeFormatter({
   std: 'JEDEC',
   decimalPlaces: 2,
@@ -37,7 +39,7 @@ async function GDriveDl(url) {
 
     if (!json.downloadUrl) throw new Error('Link blocked or quota exceeded.')
 
-    const dlRes = await fetch(json.downloadUrl)
+    const dlRes = await fetch(json.downloadUrl, { method: 'GET' })
     if (dlRes.status !== 200) throw new Error(`Download failed: ${dlRes.statusText}`)
 
     return {
@@ -69,14 +71,18 @@ cmd({
   if (data.error) return m.reply('❌ *Failed to get direct link (maybe quota exceeded or link is blocked).*')
 
   try {
+    // Add "KAVI-MD " prefix to original file name
+    const prefixedName = `KAVI-MD ${data.fileName}`
+
     await conn.sendMessage(from, {
       document: { url: data.downloadUrl },
-      mimetype: data.mimetype,
-      fileName: data.fileName
+      mimetype: data.mimetype || 'application/octet-stream',
+      fileName: prefixedName,
+      caption: POWER_CAPTION
     }, { quoted: m })
 
     await conn.sendMessage(from, {
-      text: `✅ *Downloaded from Google Drive:*\n\n📁 *Name:* ${data.fileName}\n📦 *Size:* ${data.fileSize}\n🔗 *Link:* ${data.downloadUrl}`
+      text: `✅ *Downloaded from Google Drive:*\n\n📁 *Name:* ${prefixedName}\n📦 *Size:* ${data.fileSize}\n🔗 *Link:* ${data.downloadUrl}`
     }, { quoted: m })
 
   } catch (err) {

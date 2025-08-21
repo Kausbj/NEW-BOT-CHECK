@@ -9,7 +9,7 @@ cmd({
     pattern: "for",
     desc: "forward msgs",
     alias: ["fo"],
-    category: "owner",
+    category: "ower",
     use: '.forward < Jid address >',
     filename: __filename
 },
